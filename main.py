@@ -4,6 +4,9 @@ import sqlite3
 from common import user_folder
 import os
 
+import os
+from utils_restock import get_latest_fba_stock
+
 start_date = pd.to_datetime('today').date() - pd.Timedelta(days=181)
 start_date = "2025-05-30" if start_date < pd.to_datetime("2025-05-30").date() else start_date
 
@@ -90,6 +93,12 @@ def main():
     result['average_2_weeks_units_corrected'] = result['average_2_weeks_units_corrected'].fillna(0)
     # result['average_corrected'] = result[['average_corrected_long','average_2_weeks_units_corrected']].mean(axis=1) #use `axis = ` to specify the direction of the mean calculation (rows)
     result['average_corrected'] = result['average_corrected_long']*0.4 + result['average_2_weeks_units_corrected'] *0.6
+    
+    stock = get_latest_fba_stock()
+    result = pd.merge(result, stock, on='asin', how='left')
+
+    result['dos_available'] = result['stock'] / result['average_corrected']
+
     result.to_excel(os.path.join(user_folder, 'inventory_restock.xlsx'), index=False)
 
 

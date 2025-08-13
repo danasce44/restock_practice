@@ -60,3 +60,28 @@ def check_column_names(df, file_name, target_columns):
     for column in target_columns:
         if column not in df_columns:
             raise BaseException(f"File is missing {column} column\nFile name: {file_name}")
+
+
+def get_latest_fba_stock():
+    subfolder = 'fba_inventory'
+    reports_dir = 'reports_data'
+    subfolder_path = os.path.join(reports_dir, subfolder)
+    
+    file_list = [f for f in os.listdir(subfolder_path) if f.endswith('.csv')]
+    if not file_list:
+        return pd.DataFrame(columns=['asin', 'stock'])
+
+    latest_file = max(file_list, key=lambda f: os.path.getmtime(os.path.join(subfolder_path, f)))
+    
+    file_path = os.path.join(subfolder_path, latest_file)
+    
+    df = pd.read_csv(file_path)
+    
+    columns_old = df.columns.tolist()
+    columns_new = [x.strip().replace('–','-').replace(' ','_').lower() for x in columns_old]
+    df.columns = columns_new
+    
+    df = df[['asin', 'available']]
+    df = df.rename(columns={'available': 'stock'})
+    
+    return df
