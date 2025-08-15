@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from column_names import sales_columns, fba_inventory_columns
+import sqlite3
 
 
 def check_folders():
@@ -84,4 +85,13 @@ def get_latest_fba_stock():
     df = df[['asin', 'available']]
     df = df.rename(columns={'available': 'stock'})
     
+    return df
+
+def get_latest_db_data():
+    with sqlite3.connect('restock_canada.db') as conn:
+        sql = """SELECT "snapshot-date" as snapshot_date, asin, available as stock
+        FROM fba_inventory
+        WHERE "snapshot-date" = (SELECT MAX("snapshot-date") FROM fba_inventory)
+        """
+        df = pd.read_sql_query(sql, conn)
     return df
